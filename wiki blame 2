@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wiki Blame Tool</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .revision {
+            margin-bottom: 20px;
+        }
+        .diff-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .diff-table th, .diff-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            vertical-align: top;
+        }
+        .diff-left {
+            background-color: #fdd; /* Red background for older revision */
+        }
+        .diff-right {
+            background-color: #dfd; /* Green background for newer revision */
+        }
+        .diff-top-links {
+            margin-bottom: 10px;
+        }
+        .diff-top-links a {
+            margin-right: 10px;
+        }
+        .pre-content {
+            white-space: pre-wrap; /* Preserve whitespace and wrap lines */
+            word-wrap: break-word; /* Break long words */
+        }
+    </style>
+</head>
+<body>
+    <h1>Wiki Blame Tool</h1>
+    <form id="blameForm">
+        <label for="article">Enter Article Title:</label><br>
+        <input type="text" id="article" name="article" required><br><br>
+        <label for="wikitext">Enter Wikitext:</label><br>
+        <input type="text" id="wikitext" name="wikitext" required><br><br>
+        <button type="button" onclick="findEdits()">Find Edits</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        function findEdits() {
+            var article = document.getElementById('article').value.trim();
+            var wikitext = document.getElementById('wikitext').value.trim();
+
+            if (!article || !wikitext) {
+                alert('Please enter both article title and wikitext.');
+                return;
+            }
+
+            var proxyUrl = 'https://api.allorigins.win/get?url=';
+            var apiUrl = 'https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=ids|timestamp|user|comment|content&rvlimit=500&format=json&titles=' + encodeURIComponent(article);
+            var proxyApiUrl = proxyUrl + encodeURIComponent(apiUrl);
+
+            console.log('API URL:', proxyApiUrl); // Log the API URL for debugging
+
+            $.ajax({
+                url: proxyApiUrl,
+                dataType: 'json',
+                success: function(response) {
+                    var data = JSON.parse(response.contents); // Parse the response
+                    console.log('API Response:', data); // Debugging line to inspect response
+
+                    var pages = data.query.pages;
+                    var pageId = Object.keys(pages)[0];
+                    var revisions = pages[pageId].revisions;
+
+                    if (!revisions || revisions.length === 0) {
+                        document.getElementById('result').innerHTML = '<p>No revisions found.</p>';
+                        return;
+                    }
+
+                    var resultHTML = '<h2>Revisions containing the given wikitext:</h2>';
+                    var foundEdits = false;
+
+                    revisions.forEach(function(revision, index) {
+                        if (revision.hasOwnProperty('*') && revision['*'].includes(wikitext)) {
+                            foundEdits = true;
+                            var diffUrl = 'https://en.wikipedia.org/w/index.php?diff=' + revision.revid;
+                            var olderRevId = index + 1 < revisions.length ? revisions[index + 1].revid : revision.revid; // Use the next revision's ID as the older revision
+
+                            resultHTML += '<div class="revision">' +
+                                '<h3><a href="' + diffUrl + '" target="_blank">' + revision.timestamp + '</a></h3>' +
+                                '<p><strong>User:</strong> ' + revision.user + ' <strong>Timestamp:</strong> ' + revision.timestamp + '<br>' +
+                                '<strong>Comment:</strong> ' + (revision.comment ? revision.comment : 'No comment') + '</p>' +
+                                '<div class="diff-content">' +
+                                '<div class="diff-top-links">' +
+                                '<a href="#">(cur)</a>' +
+                                '<a href="#">(prev)</a>' +
+                                '<a href="' + diffUrl + '" target="_blank">Diff</a>' +
+                                '</div>' +
+                                '<table class="diff-table">' +
+                                '<tr>' +
+                                '<th>Older Revision (ID: ' + olderRevId + ')</th>' +
+                                '<th>Newer Revision (ID: ' + revision.revid + ')</th>' +
+                                '</tr>' +
+                                '<tr>' +
+                                '<td class="diff-left"><pre class="pre-content">' + getRevisionContent(revisions, olderRevId) + '</pre></td>' +
+                                '<td class="diff-right"><pre class="pre-content">' + revision['*'] + '</pre></td>' +
+                                '</tr>' +
+                                '</table>' +
+                                '</div>' +
+                                '</div>';
+                        }
+                    });
+
+                    if (!foundEdits) {
+                        resultHTML += '<p>No revisions contain the given wikitext.</p>';
+                    }
+
+                    document.getElementById('result').innerHTML = resultHTML;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', xhr, status, error); // Enhanced error logging
+
+                    if (xhr.status === 0) {
+                        document.getElementById('result').innerHTML = '<p>Network error. Please check your connection.</p>';
+                    } else if (xhr.status >= 400 && xhr.status < 500) {
+                        document.getElementById('result').innerHTML = '<p>Client error (' + xhr.status + '). Please check the request.</p>';
+                    } else if (xhr.status >= 500) {
+                        document.getElementById('result').innerHTML = '<p>Server error (' + xhr.status + '). Please try again later.</p>';
+                    } else {
+                        document.getElementById('result').innerHTML = '<p>Unexpected error. Please try again.</p>';
+                    }
+                }
+            });
+        }
+
+        function getRevisionContent(revisions, revId) {
+            for (var i = 0; i < revisions.length; i++) {
+                if (revisions[i].revid == revId) {
+                    return revisions[i]['*'];
+                }
+            }
+            return 'Content not available';
+        }
+    </script>
+</body>
+</html>
