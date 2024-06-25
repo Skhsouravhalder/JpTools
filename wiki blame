@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wiki Blame Tool</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Wiki Blame Tool</h1>
+    <form id="blameForm">
+        <label for="wikitext">Enter Wikitext:</label><br>
+        <input type="text" id="wikitext" name="wikitext" required><br><br>
+        <button type="button" onclick="findEdits()">Find Edits</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        function findEdits() {
+            var wikitext = document.getElementById('wikitext').value.trim();
+            if (!wikitext) {
+                alert('Please enter wikitext.');
+                return;
+            }
+
+            var proxyUrl = 'https://api.allorigins.win/get?url=';
+            var apiUrl = proxyUrl + encodeURIComponent('https://justapedia.org/api.php?action=query&format=json&list=search&srsearch=' + encodeURIComponent(wikitext));
+            console.log('API URL:', apiUrl); // Log the API URL for debugging
+
+            $.ajax({
+                url: apiUrl,
+                dataType: 'json',
+                success: function(response) {
+                    var data = JSON.parse(response.contents); // Parse the response
+                    console.log('API Response:', data); // Debugging line to inspect response
+
+                    if (!data.query || !data.query.search || data.query.search.length === 0) {
+                        document.getElementById('result').innerHTML = '<p>No results found.</p>';
+                        return;
+                    }
+
+                    // Process API response to display results
+                    var searchResults = data.query.search;
+                    var resultHTML = '<h2>Results:</h2><ul>';
+                    for (var i = 0; i < searchResults.length; i++) {
+                        var snippet = searchResults[i].snippet.replace(/<\/?[^>]+(>|$)/g, "");
+                        resultHTML += '<li><strong>' + searchResults[i].title + '</strong><br>' + snippet + '</li>';
+                    }
+                    resultHTML += '</ul>';
+                    document.getElementById('result').innerHTML = resultHTML;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', xhr, status, error); // Enhanced error logging
+
+                    if (xhr.status === 0) {
+                        document.getElementById('result').innerHTML = '<p>Network error. Please check your connection.</p>';
+                    } else if (xhr.status >= 400 && xhr.status < 500) {
+                        document.getElementById('result').innerHTML = '<p>Client error (' + xhr.status + '). Please check the request.</p>';
+                    } else if (xhr.status >= 500) {
+                        document.getElementById('result').innerHTML = '<p>Server error (' + xhr.status + '). Please try again later.</p>';
+                    } else {
+                        document.getElementById('result').innerHTML = '<p>Unexpected error. Please try again.</p>';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
