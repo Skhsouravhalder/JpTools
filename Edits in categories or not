@@ -1,0 +1,138 @@
+you can modifiy this code and chage between Edits in categories	
+Edits not in categories i see here code Total Edits: 
+Edits to other pages:  but it is not 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Category Edits Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Category Edits Analysis</h1>
+    <form id="searchForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="categories">Categories (comma-separated):</label>
+        <input type="text" id="categories" name="categories" required>
+        <button type="submit">Search</button>
+    </form>
+    <div id="summary"></div>
+    <canvas id="categoryChart" width="400" height="400"></canvas>
+    <div id="error" style="color: red;"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const categories = document.getElementById('categories').value.split(',').map(cat => cat.trim());
+            try {
+                await init(username, categories);
+            } catch (error) {
+                document.getElementById('error').textContent = 'An error occurred: ' + error.message;
+                console.error(error);
+            }
+        });
+
+        async function fetchContributions(username) {
+            try {
+                const response = await fetch(`https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${username}&uclimit=max&format=json&origin=*`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Contributions:', data);
+                return data.query.usercontribs;
+            } catch (error) {
+                throw new Error('Failed to fetch contributions: ' + error.message);
+            }
+        }
+
+        async function fetchCategoryPages(category) {
+            try {
+                const response = await fetch(`https://justapedia.org/api.php?action=query&list=categorymembers&cmtitle=Category:${category}&cmlimit=max&format=json&origin=*`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log(`Pages in category ${category}:`, data);
+                return data.query.categorymembers.map(page => page.title);
+            } catch (error) {
+                throw new Error('Failed to fetch category pages for ' + category + ': ' + error.message);
+            }
+        }
+
+        async function analyzeContributions(username, categories) {
+            const contributions = await fetchContributions(username);
+            const categoryPages = {};
+
+            for (const category of categories) {
+                categoryPages[category] = await fetchCategoryPages(category);
+            }
+
+            const categoryEdits = {};
+            let totalEdits = 0;
+
+            for (const contribution of contributions) {
+                totalEdits++;
+                for (const category of categories) {
+                    if (categoryPages[category].includes(contribution.title)) {
+                        if (!categoryEdits[category]) {
+                            categoryEdits[category] = 0;
+                        }
+                        categoryEdits[category]++;
+                    }
+                }
+            }
+
+            const otherEdits = totalEdits - Object.values(categoryEdits).reduce((a, b) => a + b, 0);
+
+            return {
+                totalEdits,
+                categoryEdits,
+                otherEdits
+            };
+        }
+
+        function generateSummary(data) {
+            const { totalEdits, categoryEdits, otherEdits } = data;
+            let summary = `<p>Total Edits: ${totalEdits}</p>`;
+            summary += `<p>Edits to other pages: ${otherEdits}</p>`;
+
+            for (const [category, count] of Object.entries(categoryEdits)) {
+                summary += `<p>Edits to ${category}: ${count}</p>`;
+            }
+
+            document.getElementById('summary').innerHTML = summary;
+        }
+
+        function generateChart(data) {
+            const { categoryEdits, otherEdits } = data;
+            const labels = [...Object.keys(categoryEdits), 'Other'];
+            const values = [...Object.values(categoryEdits), otherEdits];
+
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'pie',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Edits',
+                        data: values,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#ff9f40', '#4bc0c0']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                }
+            });
+        }
+
+        async function init(username, categories) {
+            const data = await analyzeContributions(username, categories);
+            generateSummary(data);
+            generateChart(data);
+        }
+    </script>
+</body>
+</html>
