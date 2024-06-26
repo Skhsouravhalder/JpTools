@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Contributions Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #content {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        p, form {
+            text-align: center;
+            margin-bottom: 200px;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        button {
+            padding: 8px 20px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 500%;
+            border-collapse: collapse;
+            margin-top: 700px;
+            font-size: 0.9em;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #pagination {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .load-more {
+            cursor: pointer;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .load-more:hover {
+            background-color: #e0e0e0;
+        }
+        #error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>User Contributions Analysis</h1>
+        <p>This page analyzes a user's contributions.</p>
+        <form id="searchForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Search</button>
+        </form>
+        <div id="summary"></div>
+        <h2>Detailed Contributions</h2>
+        <div id="contributions"></div>
+        <div id="pagination"></div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            try {
+                await init(username);
+            } catch (error) {
+                document.getElementById('error').textContent = 'An error occurred: ' + error.message;
+                console.error(error);
+            }
+        });
+
+        async function fetchContributions(username, start = 0, limit = 40) {
+            try {
+                const response = await fetch(`https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${username}&uclimit=${limit}&ucstart=${start}&format=json&origin=*`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Contributions:', data);
+                return data.query.usercontribs;
+            } catch (error) {
+                throw new Error('Failed to fetch contributions: ' + error.message);
+            }
+        }
+
+        async function analyzeContributions(username) {
+            const contributions = await fetchContributions(username);
+            return contributions.map((contribution, index) => ({
+                slNo: index + 1, // Start SL No. from 1 for the first page
+                title: contribution.title,
+                date: contribution.timestamp,
+                diffLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&diff=${contribution.revid}`,
+                historyLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&action=history`,
+                topEditsLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&action=topedits`,
+                size: contribution.newlen,
+                summary: contribution.comment
+            }));
+        }
+
+        function generateContributionsTable(contributions) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SL No.</th>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Links (Diff, History, Top Edits)</th>
+                            <th>Size</th>
+                            <th>Edit Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const contribution of contributions) {
+                table += `
+                    <tr>
+                        <td>${contribution.slNo}</td>
+                        <td>${contribution.title}</td>
+                        <td>${new Date(contribution.date).toLocaleString()}</td>
+                        <td>
+                            <a href="${contribution.diffLink}" target="_blank">Diff</a> |
+                            <a href="${contribution.historyLink}" target="_blank">History</a> |
+                            <a href="${contribution.topEditsLink}" target="_blank">Top Edits</a>
+                        </td>
+                        <td>${contribution.size}</td>
+                        <td>${contribution.summary}</td>
+                    </tr>
+                `;
+            }
+
+            table += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('contributions').innerHTML = table;
+        }
+
+        async function init(username) {
+            const contributions = await analyzeContributions(username);
+            generateContributionsTable(contributions);
+
+            let start = 40; // Start fetching from the 41st contribution
+            const loadMoreButton = document.createElement('button');
+            loadMoreButton.textContent = 'Load More';
+            loadMoreButton.classList.add('load-more');
+            loadMoreButton.addEventListener('click', async () => {
+                const moreContributions = await fetchContributions(username, start);
+                start += 40;
+                const allContributions = contributions.concat(moreContributions.map((contribution, index) => ({
+                    slNo: contributions.length + index + 1,
+                    title: contribution.title,
+                    date: contribution.timestamp,
+                    diffLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&diff=${contribution.revid}`,
+                    historyLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&action=history`,
+                    topEditsLink: `https://justapedia.org/w/index.php?title=${encodeURIComponent(contribution.title)}&action=topedits`,
+                    size: contribution.newlen,
+                    summary: contribution.comment
+                })));
+                generateContributionsTable(allContributions);
+            });
+
+            document.getElementById('pagination').appendChild(loadMoreButton);
+        }
+    </script>
+</body>
+</html>
