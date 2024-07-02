@@ -1,3 +1,4 @@
+
     <script>
         document.getElementById('searchForm').addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -93,20 +94,6 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false, // Ensure chart fits within specified dimensions
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                    },
-                    layout: {
-                        padding: {
-                            top: 10,
-                            bottom: 10,
-                            left: 10,
-                            right: 10
-                        }
-                    }
                 }
             });
         }
