@@ -1,5 +1,4 @@
 
-    <script>
         document.getElementById('searchForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const username = document.getElementById('username').value;
@@ -103,4 +102,4 @@
             generateSummary(data);
             generateChart(data);
         }
-    </script>
+    
