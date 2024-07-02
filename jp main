@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTools</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+            font-size: 48px;
+        }
+        p {
+            color: #777;
+            font-size: 18px;
+        }
+        .button-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .button-list li {
+            margin: 10px 0;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>XTools</h1>
+        <p>Feeding your data hunger</p>
+        <ul class="button-list">
+            <li><a href="#" class="button">Edit Counter — Analysis of user contributions</a></li>
+            <li><a href="#" class="button">Page History — Get various statistics about the history of a page</a></li>
+            <li><a href="#" class="button">Authorship — Authorship attribution, measured by character count, excluding spaces</a></li>
+            <li><a href="#" class="button">Blame — Find edits that added the given wikitext</a></li>
+            <li><a href="#" class="button">Global Contributions — Get edits made by a user across all projects</a></li>
+            <li><a href="#" class="button">Pages Created — Get pages that have been created by a user</a></li>
+            <li><a href="#" class="button">Top Edits — Get edits by a user, either top edits per namespace or edits per page</a></li>
+            <li><a href="#" class="button">Automated Edits — Analysis of semi-automated and non-automated contributions</a></li>
+            <li><a href="#" class="button">Category Edits — Analysis of contributions made to specific categories</a></li>
+            <li><a href="#" class="button">Admin Stats — Show statistics of admin actions</a></li>
+            <li><a href="#" class="button">Largest Pages — Get the largest pages on a project</a></li>
+            <li><a href="#" class="button">Admin Score — Score indicating a user's readiness for adminship</a></li>
+            <li><a href="#" class="button">Edit Summaries — Analysis of edit summary usage</a></li>
+        </ul>
+    </div>
+</body>
+</html>
