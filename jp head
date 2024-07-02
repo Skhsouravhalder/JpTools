@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeroBiz</title>
+    <title>JpTools</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>HeroBiz</h1>
+    <h1>justapedia Tools</h1>
     <nav>
       <ul>
-        <li><a href="#">Home</a></li>
-        <li><a href="#">About</a></li>
-        <li><a href="#">Services</a></li>
-        <li><a href="#">Portfolio</a></li>
-        <li><a href="#">Team</a></li>
-        <li><a href="#">Blog</a></li>
-        <li><a href="#">Contact</a></li>
+        <li><a href="https://tools.justapedia.org/">Home</a></li>
+        <li><a href="https://justapedia.org/wiki/Justapedia:JPtools">About</a></li>
+        <li><a href="https://justapedia.org/wiki/User_talk:Sourav">Contact</a></li>
       </ul>
     </nav>
   </header>
