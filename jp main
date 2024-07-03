@@ -1,77 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XTools</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f8f8f8;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        h1 {
-            color: #333;
-            font-size: 48px;
-        }
-        p {
-            color: #777;
-            font-size: 18px;
-        }
-        .button-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .button-list li {
-            margin: 10px 0;
-        }
-        .button {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-decoration: none;
-            color: #333;
-            font-size: 16px;
-            text-align: left;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #e0e0e0;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>justapedia tools</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <link href="bootstrap-icons.css" rel="stylesheet">
+  <link href="aos.css" rel="stylesheet">
+  <link href="glightbox.min.css" rel="stylesheet">
+  <link href="swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="main.css" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: jptools
+  * Template URL: 
+  * Updated: Jun 29 2024 with Bootstrap v5.3.3
+  * Author: sourav
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
 </head>
-<body>
-    <div class="container">
-        <h1>XTools</h1>
-        <p>Feeding your data hunger</p>
-        <ul class="button-list">
-            <li><a href="#" class="button">Edit Counter — Analysis of user contributions</a></li>
-            <li><a href="#" class="button">Page History — Get various statistics about the history of a page</a></li>
-            <li><a href="#" class="button">Authorship — Authorship attribution, measured by character count, excluding spaces</a></li>
-            <li><a href="#" class="button">Blame — Find edits that added the given wikitext</a></li>
-            <li><a href="#" class="button">Global Contributions — Get edits made by a user across all projects</a></li>
-            <li><a href="#" class="button">Pages Created — Get pages that have been created by a user</a></li>
-            <li><a href="#" class="button">Top Edits — Get edits by a user, either top edits per namespace or edits per page</a></li>
-            <li><a href="#" class="button">Automated Edits — Analysis of semi-automated and non-automated contributions</a></li>
-            <li><a href="#" class="button">Category Edits — Analysis of contributions made to specific categories</a></li>
-            <li><a href="#" class="button">Admin Stats — Show statistics of admin actions</a></li>
-            <li><a href="#" class="button">Largest Pages — Get the largest pages on a project</a></li>
-            <li><a href="#" class="button">Admin Score — Score indicating a user's readiness for adminship</a></li>
-            <li><a href="#" class="button">Edit Summaries — Analysis of edit summary usage</a></li>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
+
+      <a href="index.html" class="logo d-flex align-items-center me-auto me-xl-0">
+        <!-- Uncomment the line below if you also wish to use an image logo -->
+        <!-- <img src="assets/img/logo.png" alt=""> -->
+        <h1 class="sitename">JpTools</h1>
+        <span>.</span>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="https://tools.justapedia.org/" class="active">Home<br></a></li>
+          <li><a href="https://justapedia.org/wiki/Justapedia:JPtools">About</a></li>
+          <li><a href="https://justapedia.org/wiki/Justapedia:Copyrights">tools Copyrights</a></li>
+          <li><a href="https://justapedia.org/wiki/Justapedia:Justapedia_Foundation_Terms_of_Use">Terms of use</a></li>
+          <li><a href="https://justapedia.org/wiki/Justapedia:General_disclaimer">disclaimer</a></li>
+          <li><a href="https://justapedia.org/">justapedia</a></li>
+          <li><a href="https://justapedia.org/wiki/User_talk:Sourav">Contact</a></li>
         </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+      <a class="btn-getstarted" href="https://justapedia.org/wiki/Special:CreateAccount">Get Started</a>
+
     </div>
-</body>
-</html>
+  </header>
+ <!-----------main jp-->
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>XTools</title>
+      <style>
+          body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              background-color: #f8f8f8;
+              margin: 0;
+              padding: 0;
+          }
+          .container {
+              max-width: 800px;
+              margin: 50px auto;
+              padding: 20px;
+              background-color: white;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+              border-radius: 8px;
+          }
+          h1 {
+              color: #333;
+              font-size: 48px;
+          }
+          p {
+              color: #777;
+              font-size: 18px;
+          }
+          .button-list {
+              list-style-type: none;
+              padding: 0;
+          }
+          .button-list li {
+              margin: 10px 0;
+          }
+          .button {
+              display: block;
+              width: 100%;
+              padding: 15px;
+              background-color: #f0f0f0;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+              text-decoration: none;
+              color: #333;
+              font-size: 16px;
+              text-align: left;
+              cursor: pointer;
+          }
+          .button:hover {
+              background-color: #e0e0e0;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <h1>Tools</h1>
+          <p>Feeding your data</p>
+          <ul class="button-list">
+              <li><a href="#" class="button">Edit Counter — Analysis of user contributions</a></li>
+              <li><a href="#" class="button">Page History — Get various statistics about the history of a page</a></li>
+              <li><a href="#" class="button">Authorship — Authorship attribution, measured by character count, excluding spaces</a></li>
+              <li><a href="https://tools.justapedia.org/blame.html" class="button">Blame — Find edits that added the given wikitext</a></li>
+              <li><a href="#" class="button">Pages Created — Get pages that have been created by a user</a></li>
+              <li><a href="#" class="button">Top Edits — Get edits by a user, either top edits per namespace or edits per page</a></li>
+              <li><a href="#" class="button">Automated Edits — Analysis of semi-automated and non-automated contributions</a></li>
+              <li><a href="https://tools.justapedia.org/ce.html" class="button">Category Edits — Analysis of contributions made to specific categories</a></li>
+              <li><a href="#" class="button">Admin Stats — Show statistics of admin actions</a></li>
+              <li><a href="#" class="button">Largest Pages — Get the largest pages on a project</a></li>
+              <li><a href="#" class="button">Admin Score — Score indicating a user's readiness for adminship</a></li>
+              <li><a href="#" class="button">Edit Summaries — Analysis of edit summary usage</a></li>
+          </ul>
+      </div>
+  </body>
+  </html>
+
