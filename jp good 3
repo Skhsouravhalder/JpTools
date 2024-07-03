@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Created Pages List</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="search-container">
+        <h1>Search Created Pages by User</h1>
+        <input type="text" id="username" placeholder="Enter username">
+        <button onclick="searchPages()">Search</button>
+    </div>
+    <div class="results" id="results">
+        <!-- Results will be displayed here -->
+    </div>
+
+    <script>
+        async function searchPages() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            const apiUrl = `https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${encodeURIComponent(username)}&ucnamespace=0&ucprop=title|timestamp|size&uclimit=max&ucshow=new&format=json&origin=*`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (!data.query || !data.query.usercontribs) {
+                    throw new Error('Invalid API response');
+                }
+
+                const pages = data.query.usercontribs;
+                displayResults(username, pages);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('results').innerHTML = '<p>Error fetching data. Please try again later.</p>';
+            }
+        }
+
+        function displayResults(username, pages) {
+            // Remove existing floating box if any
+            const existingBox = document.getElementById('floating-box');
+            if (existingBox) {
+                existingBox.remove();
+            }
+
+            // Create the floating box
+            const floatingBox = document.createElement('div');
+            floatingBox.id = 'floating-box';
+
+            // Create the close icon
+            const closeIcon = document.createElement('span');
+            closeIcon.id = 'close-icon';
+            closeIcon.textContent = '✖';
+            closeIcon.addEventListener('click', () => {
+                floatingBox.remove();
+            });
+
+            floatingBox.appendChild(closeIcon);
+
+            const header = document.createElement('h2');
+            header.textContent = `Articles Created by ${username}`;
+            floatingBox.appendChild(header);
+
+            const table = document.createElement('table');
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            const th1 = document.createElement('th');
+            th1.textContent = 'SL. NO';
+
+            const th2 = document.createElement('th');
+            th2.textContent = 'Article Name';
+
+            const th3 = document.createElement('th');
+            th3.textContent = 'Date of Creation';
+            th3.style.textAlign = 'center';
+
+            const th4 = document.createElement('th');
+            th4.textContent = 'Size (B)';
+            th4.style.textAlign = 'center';
+
+            const th5 = document.createElement('th');
+            th5.textContent = 'Links';
+            th5.style.textAlign = 'center';
+            th5.style.minWidth = '150px';
+
+            headerRow.appendChild(th1);
+            headerRow.appendChild(th2);
+            headerRow.appendChild(th3);
+            headerRow.appendChild(th4);
+            headerRow.appendChild(th5);
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            pages.forEach((page, index) => {
+                const row = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                td1.textContent = index + 1;
+                td1.style.textAlign = 'center';
+
+                const td2 = document.createElement('td');
+                const link = document.createElement('a');
+                link.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}`;
+                link.textContent = page.title;
+                td2.appendChild(link);
+
+                const td3 = document.createElement('td');
+                const date = new Date(page.timestamp);
+                td3.textContent = date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
+                td3.style.textAlign = 'center';
+
+                const td4 = document.createElement('td');
+                td4.textContent = page.size; // Display size in bytes
+                td4.style.textAlign = 'center';
+
+                const td5 = document.createElement('td');
+                td5.style.display = 'flex'; // Use flexbox to align links
+                td5.style.justifyContent = 'center';
+                td5.style.alignItems = 'center';
+
+                const editLink = document.createElement('a');
+                editLink.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}&action=edit`;
+                editLink.textContent = 'Edit';
+
+                const separator = document.createElement('span');
+                separator.innerHTML = '&nbsp;•&nbsp;'; // Middle dot separator with non-breaking spaces
+
+                const infoLink = document.createElement('a');
+                infoLink.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}&action=info`;
+                infoLink.textContent = 'Info';
+
+                td5.appendChild(editLink);
+                td5.appendChild(separator);
+                td5.appendChild(infoLink);
+
+                row.appendChild(td1);
+                row.appendChild(td2);
+                row.appendChild(td3);
+                row.appendChild(td4);
+                row.appendChild(td5);
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            floatingBox.appendChild(table);
+
+            document.body.appendChild(floatingBox);
+        }
+    </script>
+</body>
+</html>
