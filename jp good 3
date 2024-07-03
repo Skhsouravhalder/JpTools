@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Created Pages List</title>
+    <title>User Details and Created Pages</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,28 +24,39 @@
                 return;
             }
 
-            const apiUrl = `https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${encodeURIComponent(username)}&ucnamespace=0&ucprop=title|timestamp|size&uclimit=max&ucshow=new&format=json&origin=*`;
+            const userDetailsApiUrl = `https://justapedia.org/api.php?action=query&list=users&ususers=${encodeURIComponent(username)}&usprop=editcount|registration|groups|emailable|gender|age|registration&format=json&origin=*`;
+            const userContribsApiUrl = `https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${encodeURIComponent(username)}&ucnamespace=0&ucprop=title|timestamp|size&uclimit=max&ucshow=new&format=json&origin=*`;
 
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
+                const [userDetailsResponse, userContribsResponse] = await Promise.all([
+                    fetch(userDetailsApiUrl),
+                    fetch(userContribsApiUrl)
+                ]);
+
+                if (!userDetailsResponse.ok || !userContribsResponse.ok) {
                     throw new Error('Network response was not ok');
                 }
 
-                const data = await response.json();
-                if (!data.query || !data.query.usercontribs) {
-                    throw new Error('Invalid API response');
+                const userDetailsData = await userDetailsResponse.json();
+                const userContribsData = await userContribsResponse.json();
+
+                if (!userDetailsData.query || !userDetailsData.query.users || !userDetailsData.query.users[0]) {
+                    throw new Error('Invalid user details API response');
+                }
+                if (!userContribsData.query || !userContribsData.query.usercontribs) {
+                    throw new Error('Invalid user contributions API response');
                 }
 
-                const pages = data.query.usercontribs;
-                displayResults(username, pages);
+                const userDetails = userDetailsData.query.users[0];
+                const userContribs = userContribsData.query.usercontribs;
+                displayResults(username, userDetails, userContribs);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 document.getElementById('results').innerHTML = '<p>Error fetching data. Please try again later.</p>';
             }
         }
 
-        function displayResults(username, pages) {
+        function displayResults(username, userDetails, userContribs) {
             // Remove existing floating box if any
             const existingBox = document.getElementById('floating-box');
             if (existingBox) {
@@ -59,16 +70,41 @@
             // Create the close icon
             const closeIcon = document.createElement('span');
             closeIcon.id = 'close-icon';
-            closeIcon.textContent = '✖';
+            closeIcon.textContent = 'Close page';
             closeIcon.addEventListener('click', () => {
                 floatingBox.remove();
             });
 
             floatingBox.appendChild(closeIcon);
 
-            const header = document.createElement('h2');
-            header.textContent = `Articles Created by ${username}`;
-            floatingBox.appendChild(header);
+            // Display user details
+            const userDetailsSection = document.createElement('div');
+            userDetailsSection.classList.add('user-details');
+
+            const headerUserDetails = document.createElement('h2');
+            headerUserDetails.textContent = `User Details for ${username}`;
+            userDetailsSection.appendChild(headerUserDetails);
+
+            const userDetailsTable = document.createElement('table');
+            userDetailsTable.innerHTML = `
+                <tr><th>Username:</th><td>${username}</td></tr>
+                <tr><th>Total Edits:</th><td>${userDetails.editcount}</td></tr>
+                <tr><th>Total Articles Created:</th><td>${userContribs.length}</td></tr>
+                <tr><th>User Creation Date:</th><td>${new Date(userDetails.registration).toISOString().split('T')[0]}</td></tr>
+                <tr><th>User Rights:</th><td>${userDetails.groups.join(', ')}</td></tr>
+                <tr><th>Total Uploads:</th><td>${userDetails.totalUploads || 'Not available'}</td></tr>
+                <tr><th>User Age:</th><td>${userDetails.age || 'Not available'}</td></tr>
+                <tr><th>Email:</th><td>${userDetails.emailable ? 'Yes' : 'No'}</td></tr>
+                <tr><th>Gender:</th><td>${userDetails.gender || 'Not specified'}</td></tr>
+            `;
+            userDetailsSection.appendChild(userDetailsTable);
+
+            floatingBox.appendChild(userDetailsSection);
+
+            // Display articles created by user
+            const articlesHeader = document.createElement('h2');
+            articlesHeader.textContent = `Articles Created by ${username}`;
+            floatingBox.appendChild(articlesHeader);
 
             const table = document.createElement('table');
 
@@ -103,7 +139,7 @@
             table.appendChild(thead);
 
             const tbody = document.createElement('tbody');
-            pages.forEach((page, index) => {
+            userContribs.forEach((page, index) => {
                 const row = document.createElement('tr');
 
                 const td1 = document.createElement('td');
@@ -155,7 +191,8 @@
             table.appendChild(tbody);
             floatingBox.appendChild(table);
 
-            document.body.appendChild(floatingBox);
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('results').appendChild(floatingBox);
         }
     </script>
 </body>
