@@ -1,0 +1,87 @@
+
+
+.search-container {
+    text-align: center;
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+.search-container h1 {
+    margin-bottom: 20px;
+}
+.search-container input[type="text"] {
+    width: 70%;
+    padding: 10px;
+    font-size: 18px;
+    border: 2px solid #0645ad;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+.search-container button {
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #0645ad;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+.results {
+    margin-top: 20px;
+}
+.results ul {
+    list-style-type: none;
+    padding: 0;
+}
+.results li {
+    margin: 5px 0;
+}
+
+#floating-box h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#floating-box table {
+    width: 100%;
+    border-collapse: collapse;
+    color: black;
+    font-size: 100%;
+}
+
+#floating-box thead {
+    background-color: #add8e6;
+    color: black;
+}
+
+#floating-box th, #floating-box td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+#floating-box th {
+    text-align: center;
+    background-color: #0645ad;
+    color: white;
+}
+
+#floating-box td a {
+    color: #0645ad;
+    text-decoration: none;
+}
+
+#floating-box td a:hover {
+    text-decoration: underline;
+}
+
+#close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #0645ad;
+}
