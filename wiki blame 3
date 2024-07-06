@@ -1,11 +1,63 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wiki Blame Tool</title>
+    <title>justapedia wiki Blame Tool</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #000;
+            font-size: 16px;
+        }
+        nav ul li a:hover {
+            border-bottom: 2px solid #00bcd4;
+        }
+        .cta-button {
+            background-color: #00bcd4;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .cta-button:hover {
+            background-color: #0097a7;
+        }
         .revision {
             margin-bottom: 20px;
         }
@@ -37,15 +89,39 @@
         .highlight {
             background-color: #ff0; /* Yellow background for changes */
         }
+        form {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form label, form input, form button {
+            display: block;
+            margin: 10px auto;
+        }
     </style>
 </head>
 <body>
-    <h1>Wiki Blame Tool</h1>
+    <header>
+        <div class="nav-container">
+            <div class="logo">JpTools</div>
+            <nav>
+                <ul>
+                    <li><a href="https://tools.justapedia.org/">Home</a></li>
+                    <li><a href="https://justapedia.org/wiki/Justapedia:JPtools">About</a></li>
+                    <li><a href="#">tools Copyrights</a></li>
+                    <li><a href="#">Terms of use</a></li>
+                    <li><a href="#">disclaimer</a></li>
+                    <li><a href="#">justapedia</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+            <a class="cta-button" href="#">Get Started</a>
+        </div>
+    </header>
     <form id="blameForm">
-        <label for="article">Enter Article Title:</label><br>
-        <input type="text" id="article" name="article" required><br><br>
-        <label for="wikitext">Enter Wikitext:</label><br>
-        <input type="text" id="wikitext" name="wikitext" required><br><br>
+        <label for="article">Enter Article Title:</label>
+        <input type="text" id="article" name="article" required>
+        <label for="wikitext">Enter Wikitext:</label>
+        <input type="text" id="wikitext" name="wikitext" required>
         <button type="button" onclick="findEdits()">Find Edits</button>
     </form>
     <div id="result"></div>
