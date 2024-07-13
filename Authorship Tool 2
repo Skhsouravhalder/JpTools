@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorship Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #authorship-stats {
+            margin-top: 20px;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            width: 50%;
+            margin: auto;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Authorship Tool</h1>
+    <form id="authorship-form">
+        <label for="page-title">Page Title:</label>
+        <input type="text" id="page-title" name="page-title" required>
+        <button type="submit">Get Authorship Stats</button>
+    </form>
+    <div id="authorship-stats">
+        <div id="loader" class="loader"></div>
+        <div id="summary"></div>
+        <div id="results"></div>
+        <div class="chart-container">
+            <canvas id="authorshipChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('authorship-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const pageTitle = document.getElementById('page-title').value;
+
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('summary').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('authorshipChart').innerHTML = '';
+
+            try {
+                const apiUrl = `https://justapedia.org/api.php?action=query&prop=revisions&titles=${encodeURIComponent(pageTitle)}&rvprop=ids|timestamp|user|size&rvlimit=max&format=json&origin=*`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error.info);
+                }
+                const pageId = Object.keys(data.query.pages)[0];
+                if (pageId === '-1') {
+                    throw new Error('Page not found');
+                }
+                const page = data.query.pages[pageId];
+                const revisions = page.revisions;
+
+                // Calculate authorship statistics
+                const authorshipStats = calculateAuthorship(revisions);
+                
+                displayResults(page, authorshipStats, pageTitle);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('results').innerHTML = `An error occurred while fetching the authorship data: ${error.message}`;
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        });
+
+        function calculateAuthorship(revisions) {
+            const authorship = {};
+            let totalCharacters = 0;
+
+            revisions.forEach(revision => {
+                const username = revision.user;
+                const characters = revision.size;
+                totalCharacters += characters;
+
+                if (authorship[username]) {
+                    authorship[username] += characters;
+                } else {
+                    authorship[username] = characters;
+                }
+            });
+
+            const authorshipArray = Object.keys(authorship).map(username => {
+                return {
+                    username: username,
+                    characters: authorship[username],
+                    percentage: ((authorship[username] / totalCharacters) * 100).toFixed(2)
+                };
+            });
+
+            authorshipArray.sort((a, b) => b.characters - a.characters);
+
+            return authorshipArray;
+        }
+
+        function displayResults(page, authorshipStats, pageTitle) {
+            // Update the browser URL to include the page title
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('title', pageTitle);
+            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+
+            const summaryDiv = document.getElementById('summary');
+            let summaryHtml = '<h2>Summary</h2>';
+            summaryHtml += `<p><strong>Article:</strong> ${page.title}</p>`;
+            summaryHtml += `<p><strong>Total Revisions:</strong> ${page.revisions.length}</p>`;
+            summaryDiv.innerHTML = summaryHtml;
+
+            const resultsDiv = document.getElementById('results');
+            let resultsHtml = '<h2>Authorship</h2>';
+            resultsHtml += '<table><tr><th>Rank</th><th>Username</th><th>Characters</th><th>Percentage</th><th>View</th></tr>';
+            authorshipStats.forEach((author, index) => {
+                // Construct URL for each author
+                const url = `https://justapedia.org/wiki/User:${encodeURIComponent(author.username)}`;
+                resultsHtml += `<tr><td>${index + 1}</td><td>${author.username}</td><td>${author.characters}</td><td>${author.percentage}%</td><td><a href="${url}" target="_blank">View</a></td></tr>`;
+            });
+            resultsHtml += '</table>';
+            resultsDiv.innerHTML = resultsHtml;
+
+            // Destroy existing chart if it exists
+            const existingChart = Chart.getChart('authorshipChart');
+            if (existingChart) {
+                existingChart.destroy();
+            }
+
+            // Chart data
+            const usernames = authorshipStats.map(author => author.username);
+            const characterCounts = authorshipStats.map(author => author.characters);
+            const colors = ['#3498db', '#2ecc71', '#e74c3c', '#9b59b6', '#f1c40f', '#e67e22'];
+
+            const ctx = document.getElementById('authorshipChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: usernames,
+                    datasets: [{
+                        data: characterCounts,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
