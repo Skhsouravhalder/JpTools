@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Action Statistics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #admin-stats {
+            margin-top: 20px;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Admin Action Statistics</h1>
+    <form id="admin-stats-form">
+        <label for="admin-name">Admin Username:</label>
+        <input type="text" id="admin-name" name="admin-name" required>
+        <button type="submit">Get Admin Stats</button>
+    </form>
+    <div id="admin-stats">
+        <div id="loader" class="loader"></div>
+        <div id="summary"></div>
+        <div id="results"></div>
+        <div class="chart-container">
+            <canvas id="actionsChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('admin-stats-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const adminName = document.getElementById('admin-name').value.trim();
+            const loader = document.getElementById('loader');
+            const summaryDiv = document.getElementById('summary');
+            const resultsDiv = document.getElementById('results');
+            const actionsChartCtx = document.getElementById('actionsChart').getContext('2d');
+
+            // Show loader
+            loader.style.display = 'block';
+            summaryDiv.innerHTML = ''; // Clear previous results
+            resultsDiv.innerHTML = '';
+
+            try {
+                // Iterate over desired letype values
+                const letypeValues = ['block', 'delete', 'protect', 'rights', 'unprotect', 'revisiondelete', 'restore', 'reblock', 'unblock', 'reprotect', 'merge', 'import', 'abusefilter', 'contentmodel'];
+                const adminActions = {};
+
+                for (const letype of letypeValues) {
+                    const apiUrl = `https://justapedia.org/api.php?action=query&list=logevents&letype=${letype}&leuser=${encodeURIComponent(adminName)}&format=json&origin=*`;
+                    const response = await fetch(apiUrl);
+
+                    // Log the response status and details for debugging
+                    console.log(`API URL: ${apiUrl}`);
+                    console.log(`Response Status: ${response.status}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch admin actions for ${letype}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log(`Response Data:`, data);
+
+                    // Validate response structure
+                    if (data.query && data.query.logevents) {
+                        adminActions[letype] = data.query.logevents;
+                    } else {
+                        console.warn(`No logevents found for ${letype}`);
+                        adminActions[letype] = [];
+                    }
+                }
+
+                displayResults(adminName, adminActions, actionsChartCtx);
+            } catch (error) {
+                console.error('Error fetching admin actions:', error);
+                summaryDiv.innerHTML = `<p>Error fetching admin actions for ${adminName}. Details: ${error.message}</p>`;
+            } finally {
+                // Hide loader
+                loader.style.display = 'none';
+            }
+        });
+
+        function displayResults(adminName, adminActions, chartCtx) {
+            const summaryDiv = document.getElementById('summary');
+            const resultsDiv = document.getElementById('results');
+            const letypeLabels = {
+                block: '(Re)Block',
+                delete: 'Delete',
+                protect: '(Re)Protect',
+                rights: 'Rights Changes',
+                unprotect: 'Unprotect',
+                revisiondelete: 'Revision Delete',
+                restore: 'Restore',
+                reblock: '(Re)Block',
+                unblock: 'Unblock',
+                reprotect: '(Re)Protect',
+                merge: 'Merge',
+                import: 'Import',
+                abusefilter: 'Abuse Filter',
+                contentmodel: 'Content Model'
+            };
+
+            let summaryHtml = `<h2>Admin Action Statistics for ${adminName}</h2>`;
+            let totalActions = 0;
+            const actionCounts = {};
+
+            for (const letype in adminActions) {
+                const actions = adminActions[letype];
+                totalActions += actions.length;
+                actionCounts[letypeLabels[letype]] = actions.length;
+
+                if (actions.length > 0) {
+                    let resultsHtml = `<h2>${letypeLabels[letype]}</h2>`;
+                    resultsHtml += '<table><tr><th>#</th><th>Action</th><th>Title</th><th>Timestamp</th></tr>';
+                    actions.forEach((action, index) => {
+                        resultsHtml += `<tr><td>${index + 1}</td><td>${action.action}</td><td>${action.title}</td><td>${action.timestamp}</td></tr>`;
+                    });
+                    resultsHtml += '</table>';
+                    resultsDiv.innerHTML += resultsHtml;
+                } else {
+                    resultsDiv.innerHTML += `<h2>${letypeLabels[letype]}</h2><p>No actions found for ${letypeLabels[letype]}</p>`;
+                }
+            }
+
+            summaryHtml += `<p><strong>Total Actions:</strong> ${totalActions}</p>`;
+            summaryDiv.innerHTML = summaryHtml;
+
+            if (totalActions > 0) {
+                const chartLabels = Object.keys(actionCounts);
+                const chartData = Object.values(actionCounts);
+
+                new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Admin Actions',
+                            data: chartData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
