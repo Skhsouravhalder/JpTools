@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Edit Counter</title>
+    <script>
+        async function fetchEditData(username) {
+            const apiUrl = `https://justapedia.org/api.php?action=query&list=users&ususers=${encodeURIComponent(username)}&usprop=editcount%7Cgroups&format=json`;
+
+            try {
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data || !data.query || !data.query.users || data.query.users.length === 0) {
+                    throw new Error('API Error: User not found or data unavailable.');
+                }
+
+                return data.query.users[0];
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                throw error; // Rethrow the error for handling in updateEditCounter
+            }
+        }
+
+        async function updateEditCounter(username) {
+            try {
+                const userData = await fetchEditData(username);
+
+                // Update UI with fetched data
+                document.getElementById('editCounter').textContent = 'Edit Counter:';
+                document.getElementById('userId').textContent = `User ID: ${userData.userid}`;
+                document.getElementById('userGroups').textContent = `User Groups: ${userData.groups.join(', ')}`;
+                document.getElementById('editCount').textContent = `Edit Count: ${userData.editcount}`;
+
+            } catch (error) {
+                console.error('Error updating edit counter:', error);
+                document.getElementById('editCounter').textContent = `Error: ${error.message}`;
+                document.getElementById('userId').textContent = '';
+                document.getElementById('userGroups').textContent = '';
+                document.getElementById('editCount').textContent = '';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Simple Edit Counter</h1>
+    <form onsubmit="event.preventDefault(); updateEditCounter(this.username.value);">
+        <label for="username">Enter username:</label>
+        <input type="text" id="username" name="username" required>
+        <button type="submit">Fetch Edit Count</button>
+    </form>
+    <div id="editCounter"></div>
+    <div id="userId"></div>
+    <div id="userGroups"></div>
+    <div id="editCount"></div>
+</body>
+</html>
