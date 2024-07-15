@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Edits</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Top Edits</h1>
+        <form id="topEditsForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Get Top Edits</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+        <div class="chart-container">
+            <canvas id="monthlyCountsChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="timecardChart"></canvas>
+        </div>
+    </div>
+    <script>
+        document.getElementById('topEditsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            getTopEdits(username);
+        });
+
+        async function getTopEdits(username) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                list: 'usercontribs',
+                ucuser: username,
+                uclimit: 'max',
+                ucprop: 'title|timestamp|comment|size|sizediff|flags'
+            };
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayStatistics(data, username);
+            } catch (error) {
+                console.error('Error fetching top edits:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayStatistics(data, username) {
+            const userContribs = data.query.usercontribs;
+
+            if (!userContribs || userContribs.length === 0) {
+                document.getElementById('statistics').innerText = 'No contributions found for this user.';
+                return;
+            }
+
+            const pageEditCounts = {};
+            const namespaceEditCounts = {};
+            const monthlyCounts = {};
+            const timecardData = Array(24).fill(0);
+
+            userContribs.forEach(contrib => {
+                const title = contrib.title;
+                const timestamp = new Date(contrib.timestamp);
+                const namespace = title.split(':')[0] || 'Main';
+                const month = `${timestamp.getFullYear()}-${timestamp.getMonth() + 1}`;
+                const hour = timestamp.getUTCHours();
+
+                // Count edits per page
+                if (!pageEditCounts[title]) {
+                    pageEditCounts[title] = 0;
+                }
+                pageEditCounts[title]++;
+
+                // Count edits per namespace
+                if (!namespaceEditCounts[namespace]) {
+                    namespaceEditCounts[namespace] = 0;
+                }
+                namespaceEditCounts[namespace]++;
+
+                // Count edits per month
+                if (!monthlyCounts[month]) {
+                    monthlyCounts[month] = 0;
+                }
+                monthlyCounts[month]++;
+
+                // Count edits per hour
+                timecardData[hour]++;
+            });
+
+            // Calculate top pages and namespaces
+            const topPages = Object.entries(pageEditCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const topNamespaces = Object.entries(namespaceEditCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>Top Edits by ${username}</h2>
+                    <h3>Top Pages</h3>
+                    <ul>
+                        ${topPages.map(([page, count]) => `<li>${page}: ${count} edits</li>`).join('')}
+                    </ul>
+                    <h3>Top Namespaces</h3>
+                    <ul>
+                        ${topNamespaces.map(([namespace, count]) => `<li>${namespace}: ${count} edits</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+
+            // Generate Monthly Counts Chart
+            const monthlyLabels = Object.keys(monthlyCounts).sort();
+            const monthlyData = monthlyLabels.map(month => monthlyCounts[month]);
+
+            new Chart(document.getElementById('monthlyCountsChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'Monthly Edits',
+                        data: monthlyData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Generate Timecard Punch Chart
+            new Chart(document.getElementById('timecardChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Edits by Hour (UTC)',
+                        data: timecardData,
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
