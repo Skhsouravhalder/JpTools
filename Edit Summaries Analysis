@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Summaries Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Summaries Analysis</h1>
+        <form id="editSummariesForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Get Edit Summaries</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+        <table id="editSummariesTable">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Total Edits</th>
+                    <th>Edits with Summary</th>
+                    <th>Major Edits with Summary</th>
+                    <th>Minor Edits with Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be dynamically generated here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.getElementById('editSummariesForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            getEditSummaries(username);
+        });
+
+        async function getEditSummaries(username) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                list: 'usercontribs',
+                ucuser: username,
+                ucprop: 'ids|title|timestamp|comment|flags',
+                uclimit: 'max'
+            };
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayEditSummaries(data, username);
+            } catch (error) {
+                console.error('Error fetching edit summaries:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayEditSummaries(data, username) {
+            const usercontribs = data.query.usercontribs;
+
+            if (!usercontribs || usercontribs.length === 0) {
+                document.getElementById('statistics').innerText = 'No contributions found for this user.';
+                return;
+            }
+
+            // Initialize variables for statistics
+            let totalEdits = 0;
+            let editsWithSummary = 0;
+            let majorEditsWithSummary = 0;
+            let minorEditsWithSummary = 0;
+            const monthlySummaryCounts = {};
+
+            // Process contributions
+            usercontribs.forEach(contribution => {
+                totalEdits++;
+
+                // Check if edit has a summary
+                const summary = contribution.comment.trim();
+                if (summary !== '') {
+                    editsWithSummary++;
+                    // Check major/minor edit
+                    if (!(contribution.flags && contribution.flags.includes('minor'))) {
+                        majorEditsWithSummary++;
+                    } else {
+                        minorEditsWithSummary++;
+                    }
+                }
+
+                // Group by month
+                const timestamp = new Date(contribution.timestamp);
+                const monthYear = `${timestamp.toLocaleString('default', { month: 'long' })} ${timestamp.getFullYear()}`;
+                if (!monthlySummaryCounts[monthYear]) {
+                    monthlySummaryCounts[monthYear] = {
+                        total: 0,
+                        withSummary: 0,
+                        majorWithSummary: 0,
+                        minorWithSummary: 0
+                    };
+                }
+                monthlySummaryCounts[monthYear].total++;
+                if (summary !== '') {
+                    monthlySummaryCounts[monthYear].withSummary++;
+                    if (!(contribution.flags && contribution.flags.includes('minor'))) {
+                        monthlySummaryCounts[monthYear].majorWithSummary++;
+                    } else {
+                        monthlySummaryCounts[monthYear].minorWithSummary++;
+                    }
+                }
+            });
+
+            // Prepare table rows for monthly summary counts
+            const tableBody = document.querySelector('#editSummariesTable tbody');
+            tableBody.innerHTML = '';
+            Object.keys(monthlySummaryCounts).forEach(monthYear => {
+                const monthData = monthlySummaryCounts[monthYear];
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${monthYear}</td>
+                    <td>${monthData.total}</td>
+                    <td>${monthData.withSummary}</td>
+                    <td>${monthData.majorWithSummary}</td>
+                    <td>${monthData.minorWithSummary}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>Edit Summaries Analysis for ${username}</h2>
+                    <p>Total contributions analyzed: ${totalEdits}</p>
+                    <p>Total edits with summary: ${editsWithSummary}</p>
+                    <p>Major edits with summary: ${majorEditsWithSummary}</p>
+                    <p>Minor edits with summary: ${minorEditsWithSummary}</p>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+        }
+    </script>
+</body>
+</html>
