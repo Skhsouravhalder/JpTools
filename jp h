@@ -1,0 +1,49 @@
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .header .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .header nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #333;
+        }
+        .header nav a:hover {
+            color: #007bff;
+        }
+        .header .get-started {
+            background-color: #007bff;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .header .get-started:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <link href="https://justapedia.org/images/c/c8/JP_blk_logo_lft_margin_txt_prop-3.png" rel="icon">
+
+
+    <div class="header">
+        <div class="logo">JpTools</div>
+        <nav>
+            <a href="https://tools.justapedia.org/">Home</a>
+            <a href="https://justapedia.org/wiki/Justapedia:JPtools">About</a>
+            <a href="https://justapedia.org/wiki/Justapedia:Copyrights">Tools Copyrights</a>
+            <a href="https://justapedia.org/wiki/Justapedia:Justapedia_Foundation_Terms_of_Use">Terms of Use</a>
+            <a href="https://justapedia.org/wiki/Justapedia:General_disclaimer">Disclaimer</a>
+            <a href="https://justapedia.org/wiki/Main_Page">Justapedia</a>
+            <a href="https://justapedia.org/wiki/User_talk:Sourav">Contact</a>
+        </nav>
+        <a href="https://justapedia.org/wiki/Special:CreateAccount" class="get-started">Get Started</a>
+    </div>
