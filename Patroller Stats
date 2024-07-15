@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patroller Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Patroller Stats</h1>
+        <form id="patrollerStatsForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Get Patroller Stats</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+        <div class="chart-container">
+            <canvas id="patrolActionsChart"></canvas>
+        </div>
+        <table id="patrolActionsTable">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Page Title</th>
+                    <th>Patrolled By</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be dynamically generated here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.getElementById('patrollerStatsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            getPatrollerStats(username);
+        });
+
+        async function getPatrollerStats(username) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                list: 'logevents',
+                letype: 'patrol',
+                leuser: username,
+                lelimit: 'max'
+            };
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayStatistics(data, username);
+            } catch (error) {
+                console.error('Error fetching patroller stats:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayStatistics(data, username) {
+            const logevents = data.query.logevents;
+
+            if (!logevents || logevents.length === 0) {
+                document.getElementById('statistics').innerText = 'No patrol actions found for this user.';
+                return;
+            }
+
+            let patrolCounts = {};
+            let totalPatrols = 0;
+            const tableBody = document.querySelector('#patrolActionsTable tbody');
+            tableBody.innerHTML = '';
+
+            logevents.forEach(event => {
+                const timestamp = new Date(event.timestamp);
+                const month = `${timestamp.getFullYear()}-${timestamp.getMonth() + 1}`;
+                const pageTitle = event.title;
+                const patrolLink = `https://justapedia.org/wiki/${pageTitle.replace(/ /g, '_')}`;
+                
+                if (!patrolCounts[month]) {
+                    patrolCounts[month] = 0;
+                }
+                patrolCounts[month]++;
+                totalPatrols++;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${timestamp.toISOString()}</td>
+                    <td>${pageTitle}</td>
+                    <td>${event.user}</td>
+                    <td><a href="${patrolLink}" target="_blank">View Page</a></td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Sort and prepare data for chart
+            const months = Object.keys(patrolCounts).sort();
+            const counts = months.map(month => patrolCounts[month]);
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>Patroller Stats for ${username}</h2>
+                    <p>Total Patrol Actions: ${totalPatrols}</p>
+                    <h3>Monthly Patrol Actions</h3>
+                    <ul>
+                        ${months.map(month => `<li>${month}: ${patrolCounts[month]} actions</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+
+            // Generate Monthly Patrol Actions Chart
+            new Chart(document.getElementById('patrolActionsChart'), {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Monthly Patrol Actions',
+                        data: counts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
