@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page History Statistics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Page History Statistics</h1>
+        <form id="pageHistoryForm">
+            <label for="pageTitle">Page Title:</label>
+            <input type="text" id="pageTitle" name="pageTitle" required>
+            <button type="submit">Get Statistics</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+    </div>
+    <script>
+        document.getElementById('pageHistoryForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const pageTitle = document.getElementById('pageTitle').value;
+            getPageHistoryStatistics(pageTitle);
+        });
+
+        async function getPageHistoryStatistics(pageTitle) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                prop: 'revisions',
+                titles: pageTitle,
+                rvprop: 'timestamp|user|comment|size',
+                rvlimit: 'max'
+            };
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayStatistics(data);
+            } catch (error) {
+                console.error('Error fetching page history:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayStatistics(data) {
+            const pages = data.query.pages;
+            const pageId = Object.keys(pages)[0];
+            const revisions = pages[pageId].revisions;
+
+            if (!revisions) {
+                document.getElementById('statistics').innerText = 'No revisions found for this page.';
+                return;
+            }
+
+            const totalRevisions = revisions.length;
+            const users = [...new Set(revisions.map(rev => rev.user))];
+            const firstRevision = revisions[revisions.length - 1];
+            const lastRevision = revisions[0];
+
+            const userEditCounts = {};
+            const yearCounts = {};
+            const monthCounts = {};
+            let automatedEdits = 0;
+
+            revisions.forEach(rev => {
+                const user = rev.user;
+                const timestamp = new Date(rev.timestamp);
+                const year = timestamp.getFullYear();
+                const month = timestamp.getMonth() + 1;
+
+                // Count user edits
+                if (!userEditCounts[user]) {
+                    userEditCounts[user] = 0;
+                }
+                userEditCounts[user]++;
+
+                // Count year edits
+                if (!yearCounts[year]) {
+                    yearCounts[year] = 0;
+                }
+                yearCounts[year]++;
+
+                // Count month edits
+                const yearMonth = `${year}-${month}`;
+                if (!monthCounts[yearMonth]) {
+                    monthCounts[yearMonth] = 0;
+                }
+                monthCounts[yearMonth]++;
+
+                // Count automated edits (simple heuristic)
+                if (user.includes('bot') || user.includes('Bot')) {
+                    automatedEdits++;
+                }
+            });
+
+            // Calculate top editors
+            const topEditors = Object.entries(userEditCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>General Statistics</h2>
+                    <p>Total Revisions: ${totalRevisions}</p>
+                    <p>Unique Users: ${users.length}</p>
+                    <p>First Revision: ${firstRevision.timestamp} by ${firstRevision.user}</p>
+                    <p>Last Revision: ${lastRevision.timestamp} by ${lastRevision.user}</p>
+                </div>
+                <div class="statistics-section">
+                    <h2>Authorship</h2>
+                    <ul>
+                        ${Object.entries(userEditCounts).map(([user, count]) => `<li>${user}: ${count} edits</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="statistics-section">
+                    <h2>Top Editors</h2>
+                    <ul>
+                        ${topEditors.map(([user, count]) => `<li>${user}: ${count} edits</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="statistics-section">
+                    <h2>Year Counts</h2>
+                    <ul>
+                        ${Object.entries(yearCounts).map(([year, count]) => `<li>${year}: ${count} edits</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="statistics-section">
+                    <h2>Month Counts</h2>
+                    <ul>
+                        ${Object.entries(monthCounts).map(([yearMonth, count]) => `<li>${yearMonth}: ${count} edits</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="statistics-section">
+                    <h2>(Semi-)Automated Edits</h2>
+                    <p>Total Automated Edits: ${automatedEdits}</p>
+                </div>
+                <div class="statistics-section">
+                    <h2>Assessments</h2>
+                    <p>Assessments data can be added here if available.</p>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+        }
+    </script>
+</body>
+</html>
