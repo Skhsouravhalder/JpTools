@@ -1,1 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Edits</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Automated Edits</h1>
+        <form id="automatedEditsForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Analyze Edits</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+        <div class="chart-container">
+            <canvas id="editsChart"></canvas>
+        </div>
+    </div>
+    <script>
+        document.getElementById('automatedEditsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            analyzeEdits(username);
+        });
+
+        async function analyzeEdits(username) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                list: 'usercontribs',
+                ucuser: username,
+                uclimit: 'max',
+                ucprop: 'title|timestamp|comment|size|sizediff|flags'
+            };
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayStatistics(data, username);
+            } catch (error) {
+                console.error('Error fetching user contributions:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayStatistics(data, username) {
+            const userContribs = data.query.usercontribs;
+
+            if (!userContribs || userContribs.length === 0) {
+                document.getElementById('statistics').innerText = 'No contributions found for this user.';
+                return;
+            }
+
+            let automatedEdits = 0;
+            let nonAutomatedEdits = 0;
+
+            userContribs.forEach(contrib => {
+                const user = contrib.user;
+                // Simple heuristic: consider edits by users with "bot" in the name as automated
+                if (user.toLowerCase().includes('bot')) {
+                    automatedEdits++;
+                } else {
+                    nonAutomatedEdits++;
+                }
+            });
+
+            const totalEdits = automatedEdits + nonAutomatedEdits;
+            const automatedPercentage = ((automatedEdits / totalEdits) * 100).toFixed(2);
+            const nonAutomatedPercentage = ((nonAutomatedEdits / totalEdits) * 100).toFixed(2);
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>Automated Edits Analysis for ${username}</h2>
+                    <p>Total Edits: ${totalEdits}</p>
+                    <p>Automated Edits: ${automatedEdits} (${automatedPercentage}%)</p>
+                    <p>Non-Automated Edits: ${nonAutomatedEdits} (${nonAutomatedPercentage}%)</p>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+
+            // Generate Pie Chart for Automated vs Non-Automated Edits
+            new Chart(document.getElementById('editsChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Automated Edits', 'Non-Automated Edits'],
+                    datasets: [{
+                        data: [automatedEdits, nonAutomatedEdits],
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
 
