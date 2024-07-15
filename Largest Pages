@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Largest Pages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+        .statistics-section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Largest Pages</h1>
+        <form id="largestPagesForm">
+            <label for="limit">Number of Pages:</label>
+            <input type="number" id="limit" name="limit" value="10" min="1" required>
+            <label for="namespace">Namespace (optional):</label>
+            <input type="number" id="namespace" name="namespace">
+            <label for="titlePattern">Page Title Pattern (optional):</label>
+            <input type="text" id="titlePattern" name="titlePattern">
+            <button type="submit">Get Largest Pages</button>
+        </form>
+        <div id="statistics" class="statistics"></div>
+        <table id="largestPagesTable">
+            <thead>
+                <tr>
+                    <th>Page Title</th>
+                    <th>Page Size (bytes)</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be dynamically generated here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.getElementById('largestPagesForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const limit = document.getElementById('limit').value;
+            const namespace = document.getElementById('namespace').value;
+            const titlePattern = document.getElementById('titlePattern').value;
+            getLargestPages(limit, namespace, titlePattern);
+        });
+
+        async function getLargestPages(limit, namespace, titlePattern) {
+            const apiUrl = 'https://justapedia.org/api.php';
+            const params = {
+                action: 'query',
+                format: 'json',
+                list: 'allpages',
+                aplimit: limit,
+                apfilterredir: 'nonredirects',
+                approp: 'info|length',
+                apsort: 'size',
+                apdir: 'descending'
+            };
+            if (namespace) {
+                params.apnamespace = namespace;
+            }
+            if (titlePattern) {
+                params.apprefix = titlePattern.replace(/%/g, '');
+            }
+            const url = `${apiUrl}?${new URLSearchParams(params).toString()}&origin=*`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayLargestPages(data);
+            } catch (error) {
+                console.error('Error fetching largest pages:', error);
+                document.getElementById('statistics').innerText = 'An error occurred while fetching the data.';
+            }
+        }
+
+        function displayLargestPages(data) {
+            const pages = data.query.allpages;
+
+            if (!pages || pages.length === 0) {
+                document.getElementById('statistics').innerText = 'No pages found.';
+                return;
+            }
+
+            const tableBody = document.querySelector('#largestPagesTable tbody');
+            tableBody.innerHTML = '';
+
+            pages.forEach(page => {
+                const pageTitle = page.title;
+                const pageSize = page.length;
+                const pageLink = `https://justapedia.org/wiki/${pageTitle.replace(/ /g, '_')}`;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pageTitle}</td>
+                    <td>${pageSize}</td>
+                    <td><a href="${pageLink}" target="_blank">View Page</a></td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Generate statistics HTML
+            const statisticsHtml = `
+                <div class="statistics-section">
+                    <h2>Largest Pages</h2>
+                    <p>Showing the top ${pages.length} largest pages.</p>
+                </div>
+            `;
+
+            document.getElementById('statistics').innerHTML = statisticsHtml;
+        }
+    </script>
+</body>
+</html>
