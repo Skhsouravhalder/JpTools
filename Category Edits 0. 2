@@ -5,6 +5,44 @@
     <title>Category Edits Analysis</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #ddd;
+        }
+        .header .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .header .logo span {
+            color: #1ea1f2;
+        }
+        .header nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #333;
+        }
+        .header nav a:hover {
+            color: #1ea1f2;
+        }
+        .header .get-started {
+            background-color: #1ea1f2;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .header .get-started:hover {
+            background-color: #0d8cd2;
+        }
         #chartContainer {
             max-width: 400px; /* Adjust max width as needed */
             margin: 0 auto; /* Center align horizontally */
@@ -14,6 +52,20 @@
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="logo">JpTools<span>.</span></div>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">tools</a>
+            <a href="#">Copyrights</a>
+            <a href="#">Terms of use</a>
+            <a href="#">disclaimer</a>
+            <a href="#">justapedia</a>
+            <a href="#">Contact</a>
+        </nav>
+        <a href="#" class="get-started">Get Started</a>
+    </div>
     <h1>Category Edits Analysis</h1>
     <form id="searchForm">
         <label for="username">Username:</label>
@@ -27,6 +79,8 @@
         <canvas id="categoryChart"></canvas>
     </div>
     <div id="error" style="color: red;"></div>
+    <div id="userUrl"></div>
+    <div id="currentPageUrl"></div>
 
     <script>
         document.getElementById('searchForm').addEventListener('submit', async function(event) {
@@ -35,11 +89,27 @@
             const categories = document.getElementById('categories').value.split(',').map(cat => cat.trim());
             try {
                 await init(username, categories);
+                updateURL(username, categories);
+                displayUserUrl(username);
+                displayCurrentPageUrl();
             } catch (error) {
                 document.getElementById('error').textContent = 'An error occurred: ' + error.message;
                 console.error(error);
             }
         });
+
+        function updateURL(username, categories) {
+            const newUrl = `${window.location.origin}${window.location.pathname}?username=${encodeURIComponent(username)}&categories=${encodeURIComponent(categories.join(','))}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                username: params.get('username'),
+                categories: params.get('categories') ? params.get('categories').split(',') : []
+            };
+        }
 
         async function fetchContributions(username) {
             try {
@@ -127,11 +197,32 @@
             });
         }
 
+        function displayUserUrl(username) {
+            const userUrl = `https://justapedia.org/wiki/User:${username}`;
+            document.getElementById('userUrl').innerHTML = `<p>User URL: <a href="${userUrl}" target="_blank">${userUrl}</a></p>`;
+        }
+
+        function displayCurrentPageUrl() {
+            const currentPageUrl = window.location.href;
+            document.getElementById('currentPageUrl').innerHTML = `<p>Current Page URL: <a href="${currentPageUrl}" target="_blank">${currentPageUrl}</a></p>`;
+        }
+
         async function init(username, categories) {
             const data = await analyzeContributions(username, categories);
             generateSummary(data);
             generateChart(data);
         }
+
+        window.addEventListener('DOMContentLoaded', async (event) => {
+            const { username, categories } = getQueryParams();
+            if (username) {
+                document.getElementById('username').value = username;
+                document.getElementById('categories').value = categories.join(', ');
+                await init(username, categories);
+                displayUserUrl(username);
+                displayCurrentPageUrl();
+            }
+        });
     </script>
 </body>
 </html>
