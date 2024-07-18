@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Details and Created Pages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #000;
+            font-size: 16px;
+        }
+        nav ul li a:hover {
+            border-bottom: 2px solid #00bcd4;
+        }
+        .cta-button {
+            background-color: #00bcd4;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .cta-button:hover {
+            background-color: #0097a7;
+        }
+        .search-container {
+            text-align: center;
+            margin: 20px;
+        }
+        .results {
+            padding: 20px;
+        }
+        #floating-box {
+            position: relative;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        #close-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            color: #f00;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <div class="logo">JpTools</div>
+            <nav>
+                <ul>
+                    <li><a href="https://tools.justapedia.org/">Home</a></li>
+                    <li><a href="https://justapedia.org/wiki/Justapedia:JPtools">About</a></li>
+                    <li><a href="https://justapedia.org/wiki/Justapedia:JPtools">tools Copyrights</a></li>
+                    <li><a href="https://justapedia.org/wiki/Justapedia:Copyrights">Terms of use</a></li>
+                    <li><a href="https://justapedia.org/wiki/Justapedia:General_disclaimer">disclaimer</a></li>
+                    <li><a href="https://justapedia.org/">justapedia</a></li>
+                    <li><a href="https://justapedia.org/wiki/User_talk:Sourav">Contact</a></li>
+                </ul>
+            </nav>
+            <a class="cta-button" href="#">Get Started</a>
+        </div>
+    </header>
+    <div class="search-container">
+        <h1>Search Created Pages by User</h1>
+        <input type="text" id="username" placeholder="Enter username">
+        <button onclick="searchPages()">Search</button>
+    </div>
+    <div class="results" id="results">
+        <!-- Results will be displayed here -->
+    </div>
+
+    <script>
+        async function searchPages() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            const userDetailsApiUrl = `https://justapedia.org/api.php?action=query&list=users&ususers=${encodeURIComponent(username)}&usprop=editcount|registration|groups|emailable|gender|age|registration&format=json&origin=*`;
+            const userContribsApiUrl = `https://justapedia.org/api.php?action=query&list=usercontribs&ucuser=${encodeURIComponent(username)}&ucnamespace=0&ucprop=title|timestamp|size&uclimit=max&ucshow=new&format=json&origin=*`;
+
+            try {
+                const [userDetailsResponse, userContribsResponse] = await Promise.all([
+                    fetch(userDetailsApiUrl),
+                    fetch(userContribsApiUrl)
+                ]);
+
+                if (!userDetailsResponse.ok || !userContribsResponse.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const userDetailsData = await userDetailsResponse.json();
+                const userContribsData = await userContribsResponse.json();
+
+                if (!userDetailsData.query || !userDetailsData.query.users || !userDetailsData.query.users[0]) {
+                    throw new Error('Invalid user details API response');
+                }
+                if (!userContribsData.query || !userContribsData.query.usercontribs) {
+                    throw new Error('Invalid user contributions API response');
+                }
+
+                const userDetails = userDetailsData.query.users[0];
+                const userContribs = userContribsData.query.usercontribs;
+                displayResults(username, userDetails, userContribs);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('results').innerHTML = '<p>Error fetching data. Please try again later.</p>';
+            }
+        }
+
+        function displayResults(username, userDetails, userContribs) {
+            // Remove existing floating box if any
+            const existingBox = document.getElementById('floating-box');
+            if (existingBox) {
+                existingBox.remove();
+            }
+
+            // Create the floating box
+            const floatingBox = document.createElement('div');
+            floatingBox.id = 'floating-box';
+
+            // Create the close icon
+            const closeIcon = document.createElement('span');
+            closeIcon.id = 'close-icon';
+            closeIcon.textContent = '';
+            closeIcon.addEventListener('click', () => {
+                floatingBox.remove();
+            });
+
+            floatingBox.appendChild(closeIcon);
+
+            // Display user details
+            const userDetailsSection = document.createElement('div');
+            userDetailsSection.classList.add('user-details');
+
+            const headerUserDetails = document.createElement('h2');
+            headerUserDetails.textContent = `User Details for ${username}`;
+            userDetailsSection.appendChild(headerUserDetails);
+
+            const userDetailsTable = document.createElement('table');
+            userDetailsTable.innerHTML = `
+                <tr><th>Username:</th><td>${username}</td></tr>
+                <tr><th>Total Edits:</th><td>${userDetails.editcount}</td></tr>
+                <tr><th>Total Articles Created:</th><td>${userContribs.length}</td></tr>
+                <tr><th>User Creation Date:</th><td>${new Date(userDetails.registration).toISOString().split('T')[0]}</td></tr>
+                <tr><th>User Rights:</th><td>${userDetails.groups.join(', ')}</td></tr>
+                <tr><th>Total Uploads:</th><td>${userDetails.totalUploads || 'Not available'}</td></tr>
+                <tr><th>User Age:</th><td>${userDetails.age || 'Not available'}</td></tr>
+                <tr><th>Email:</th><td>${userDetails.emailable ? 'Yes' : 'No'}</td></tr>
+                <tr><th>Gender:</th><td>${userDetails.gender || 'Not specified'}</td></tr>
+            `;
+            userDetailsSection.appendChild(userDetailsTable);
+
+            floatingBox.appendChild(userDetailsSection);
+
+            // Display articles created by user
+            const articlesHeader = document.createElement('h2');
+            articlesHeader.textContent = `Articles Created by ${username}`;
+            floatingBox.appendChild(articlesHeader);
+
+            const table = document.createElement('table');
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            const th1 = document.createElement('th');
+            th1.textContent = 'SL. NO';
+
+            const th2 = document.createElement('th');
+            th2.textContent = 'Article Name';
+
+            const th3 = document.createElement('th');
+            th3.textContent = 'Date of Creation';
+            th3.style.textAlign = 'center';
+
+            const th4 = document.createElement('th');
+            th4.textContent = 'Size (B)';
+            th4.style.textAlign = 'center';
+
+            const th5 = document.createElement('th');
+            th5.textContent = 'Links';
+            th5.style.textAlign = 'center';
+            th5.style.minWidth = '150px';
+
+            headerRow.appendChild(th1);
+            headerRow.appendChild(th2);
+            headerRow.appendChild(th3);
+            headerRow.appendChild(th4);
+            headerRow.appendChild(th5);
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            userContribs.forEach((page, index) => {
+                const row = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                td1.textContent = index + 1;
+                td1.style.textAlign = 'center';
+
+                const td2 = document.createElement('td');
+                const link = document.createElement('a');
+                link.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}`;
+                link.textContent = page.title;
+                td2.appendChild(link);
+
+                const td3 = document.createElement('td');
+                const date = new Date(page.timestamp);
+                td3.textContent = date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
+                td3.style.textAlign = 'center';
+
+                const td4 = document.createElement('td');
+                td4.textContent = page.size; // Display size in bytes
+                td4.style.textAlign = 'center';
+
+                const td5 = document.createElement('td');
+                td5.style.display = 'flex'; // Use flexbox to align links
+                td5.style.justifyContent = 'center';
+                td5.style.alignItems = 'center';
+
+                const editLink = document.createElement('a');
+                editLink.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}&action=edit`;
+                editLink.textContent = 'Edit';
+
+                const separator = document.createElement('span');
+                separator.innerHTML = '&nbsp;•&nbsp;'; // Middle dot separator with non-breaking spaces
+
+                const infoLink = document.createElement('a');
+                infoLink.href = `https://justapedia.org/index.php?title=${encodeURIComponent(page.title)}&action=info`;
+                infoLink.textContent = 'Info';
+
+                td5.appendChild(editLink);
+                td5.appendChild(separator);
+                td5.appendChild(infoLink);
+
+                row.appendChild(td1);
+                row.appendChild(td2);
+                row.appendChild(td3);
+                row.appendChild(td4);
+                row.appendChild(td5);
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            floatingBox.appendChild(table);
+
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('results').appendChild(floatingBox);
+        }
+
+        
+    document.getElementById('authorship-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const pageTitle = document.getElementById('page-title').value;
+
+        try {
+            const apiUrl = `https://justapedia.org/api.php?action=query&prop=revisions&titles=${encodeURIComponent(pageTitle)}&rvprop=ids|timestamp|user|size&rvlimit=max&format=json&origin=*`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error.info);
+            }
+            const pageId = Object.keys(data.query.pages)[0];
+            if (pageId === '-1') {
+                throw new Error('Page not found');
+            }
+            const page = data.query.pages[pageId];
+            const revisions = page.revisions;
+
+            // Calculate authorship statistics
+            const authorshipStats = calculateAuthorship(revisions);
+            
+            // Redirect to results page with query parameter
+            window.location.href = `results.html?title=${encodeURIComponent(pageTitle)}`;
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            alert(`An error occurred while fetching the authorship data: ${error.message}`);
+        }
+    });
+
+  // Function to handle query parameters
+  function handleQueryParams() {
+      // Get the current URL's search parameters
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // Example: Get a specific parameter
+      const userId = urlParams.get('userId');
+      console.log('User ID:', userId);
+
+      // Example: Set a new parameter
+      urlParams.set('newParam', 'exampleValue');
+
+      // Example: Output the updated query string
+      console.log('Updated Query String:', urlParams.toString());
+    }
+    </script>
+</body>
+</html>
